@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-metrics
+spec:
+  selector: 
+    matchLabels:
+      app: pod-metrics
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pod-metrics
+    spec:
+      containers:      
+        - name: pod-metrics
+          image: amayo01/pod-metrics:latest
+          command: ["/bin/bash", "-c"]
+          args:
+            - kubectl proxy &
+              echo "[+] Running prometheus exporter";
+              python3 pod-metrics.py;
+          ports:
+            - containerPort: 8000
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata: 
+  name: pod-metrics-service
+spec: 
+  selector: 
+    app: pod-metrics
+  ports:
+    - name: service-port
+      protocol: TCP
+      port: 8000
+      targetPort: 8000

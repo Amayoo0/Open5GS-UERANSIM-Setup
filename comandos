@@ -1,0 +1,72 @@
+#!/bin/bash
+
+set -e
+cd /home/mayo/Documents/TFG/01-Setup
+
+
+# señal SIGINT (Ctrl+C)
+ctrl_c_handler() {
+  echo -e "\n\n\n[-] Leaving script ..."
+  exit 0
+}
+
+trap ctrl_c_handler SIGINT
+
+
+wait_for_pods_ready() {
+    local resource_type=$1
+    local label_selector=$2
+    local instance=$(echo "$label_selector" | awk -F'=' '{print $NF}')
+    local total_pods=$(kubectl get pods -l "$label_selector" --no-headers | wc -l | awk '{print $1}')
+    while true; do
+        ready_pods=$(kubectl get pods -l "$label_selector" --namespace default -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}' | tr ' ' '\n')
+        local num_ready_pods=$(grep -o "True" <<< "${ready_pods[@]}" | wc -l)
+        if [[ $num_ready_pods -lt $total_pods ]]; then
+            echo "Esperando instancia: ${instance}..."
+            sleep 5
+        else
+            echo "[+] ${instance} configured"
+            break
+        fi
+    done
+}
+
+minikube start --cpus=4 --memory=4000mb --driver=docker --addons=metrics-server
+
+helm install open5gs openverso/open5gs --version 2.0.8 --values ./helm-values/5gSA-values.yaml 
+wait_for_pods_ready "deployment" "app.kubernetes.io/instance=open5gs"
+
+helm install ueransim-gnb openverso/ueransim-gnb --version 0.2.5 --values ./helm-values/gnb-ues-values.yaml
+wait_for_pods_ready "deployment" "app.kubernetes.io/instance=ueransim-gnb"
+echo "[+] UERANSIM configured"
+
+kubectl apply -f ./config/pod-reader-role.yaml
+kubectl apply -f ./config/pod-reader-rolebinding.yaml
+kubectl apply -f ./config/pod-metrics-deployment.yaml
+kubectl apply -f ./config/ue-metrics-service.yaml
+
+echo -e "\n\nIntroduzca los siguientes servicios en prometheus"
+
+kubectl get services | grep metrics
+echo "Presiona Enter para continuar..."
+read
+
+helm install prometheus prometheus-community/prometheus --version 20.0.0 --values ./helm-values/prometheus-values.yaml
+wait_for_pods_ready "deployment" "app=prometheus"
+wait_for_pods_ready "deployment" "app.kubernetes.io/instance=prometheus"
+
+kubectl expose service prometheus-server --type=NodePort --target-port=9090 --name=prometheus-ext
+prometheusUrl=$(kubectl get service/prometheus-ext -o=jsonpath='{.spec.clusterIP}{"\n"}')
+
+helm install grafana grafana/grafana --version 6.52.4
+wait_for_pods_ready "deployment" "app.kubernetes.io/instance=grafana"
+
+kubectl expose service grafana --type=NodePort --target-port=3000 --name=grafana-ext
+
+# Grafana credentials
+pass=$(kubectl get secret --namespace default grafana -o yaml | grep admin-password | awk -F ": " '{print $2}' | openssl base64 -d ; echo)
+
+# Access Grafana 
+grafanaUrl=$(minikube service grafana-ext --url)
+echo -e "\n\n\nLogin to $grafanaUrl with admin:$pass "
+echo "Go to Grafana Configuration > Data source > Add data source > Prometheus and provide the service URL generated: http://$prometheusUrl"

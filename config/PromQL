@@ -1,0 +1,7 @@
+(
+  (0.6 * (1 - (avg_over_time(ping3_jitter{job="ue-metrics"}[5m]) / max_over_time(ping3_jitter{job="ue-metrics"}[5m])))) +
+  (0.5 * (1 - (avg_over_time(ping3_latency{job="ue-metrics"}[5m]) / max_over_time(ping3_latency{job="ue-metrics"}[5m])))) +
+  (0.1 * (avg_over_time(iperf3_throughput{job="ue-metrics"}[5m]) / max_over_time(iperf3_throughput{job="ue-metrics"}[5m])))
+)
+*
+(4.23 - 1) + 1

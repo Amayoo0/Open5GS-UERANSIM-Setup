@@ -1,0 +1,5 @@
+#!/bin/bash
+# ./nr-binder {PDU-IP-ADDRESS} iperf3 -c {IP-OF-CORE-NETWORK-MACHINE} -i 1 -t 2000
+/usr/local/bin/nr-binder 10.45.0.4 python3 /youtube/main.py --resolution 240p --duration 5
+
+python3 /youtube/ue-metrics.py
