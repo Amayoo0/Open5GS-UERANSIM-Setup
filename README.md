@@ -223,7 +223,7 @@ memtester 100M 1 -t 30
 ```
 
 
-# How CPU usage is calculated? [metrics-server reference | FAQ](https://github.com/kubernetes-sigs/metrics-server/blob/master/FAQ.md)
+# [metrics-server reference | FAQ](https://github.com/kubernetes-sigs/metrics-server/blob/master/FAQ.md)
 ## How CPU usage is calculated?
 This value is derived by taking a rate over a cumulative CPU counter provided by the kernel (in both Linux and Windows kernels). Time window used to calculate CPU is exposed under window field in Metrics API. 
 
