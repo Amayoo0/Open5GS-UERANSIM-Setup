@@ -5,7 +5,6 @@ This describes a very simple configuration that uses Open5GS and UERANSIM for mo
 - Open5GS and UERANSIM implementation
 - Prometheus and Grafana connection
 - Collect real-time resource utilization & application metrics
-- Prometheus-client python3 script
 
 # Getting Started
 ## Requirements 
@@ -53,8 +52,7 @@ The use of hardware resources is limited to the UPF network element in order to 
 |   Limits         | CPU        |     3mC     |
 |                  | Memory     |     120MiB    |
 
-
-La asignación de memoria se realiza así ya que es necesario un mínimo de recursos para arrancar el contenedor. Este límite, por tanto, 
+ 
 ## UERANSIM
 
 ```bash
@@ -70,7 +68,7 @@ If the tunnel interfaces uesimtun0 and uesimtun1 have not been created in the UE
 # Configure listener to K8's API for PodMonitoring 
 To monitor the resource usage metrics exposed by the metrics-server service in the kubernetes API, we need a pod capable of obtaining and formatting these metrics so that prometheus can understand them.
 
-Actualizamos el script en ./volume/pod-metrics.py
+Update the script in ./volume/pod-metrics.py
 
 ## Create an image in Docker Hub
 The image will have the aplication ./volume/pod-metrics.py and all the dependencies. 
@@ -109,7 +107,7 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 # Download the default values from the repository
 helm show values prometheus-community/prometheus > ./helm-values/prometheus-values.yaml
 ```
-It is necessary to add the targets that epxort metrics to the prometheus server indicating their IP and port
+It is necessary to add the targets that export metrics to the prometheus server indicating their IP and port
 ```yaml
 serverFiles:
   prometheus.yml:
@@ -164,19 +162,17 @@ echo "Go to Grafana Configuration > Data source > Add data source > Prometheus a
 ```
 
 ## Grafana Dashboard
-Importar /home/mayo/Documents/TFG/01-Setup/Monitoring/GrafanaDashboard/OPEN5GS & UERANSIM-v13.json que incorpora gráfica de uso de recursos interesante para la evaluación.
+Import ./Monitoring/GrafanaDashboard/OPEN5GS_UERANSIM-v14.json which incorporates resource usage graphs interesting for evaluation.
 
-Una de las gráficas representa una estimación de calidad de experiencia basada en métricas del servicio, ponderando con mayor valor aquellas métricas consideradas críticas en ciertos servicios, como puede ser el jitter, la latencia de red o el throughput.
+One of the graphs represents an estimation of quality of experience based on service metrics, weighting with higher value those metrics considered critical in certain services, such as jitter, network latency or throughput.
 
-La consulta realizada para el cálculo de esta métrica de calidad es la siguiente:
+The query performed for the calculation of this quality metric is as follows:
 ```
-(
-  (0.4 * (1 - (avg_over_time(ping3_jitter{job="ue-metrics"}[5m]) / max_over_time(ping3_jitter{job="ue-metrics"}[5m])))) +
-  (0.3 * (1 - (avg_over_time(ping3_latency{job="ue-metrics"}[5m]) / max_over_time(ping3_latency{job="ue-metrics"}[5m])))) +
-  (0.15 * (avg_over_time(iperf3_throughput{job="ue-metrics"}[5m]) / max_over_time(iperf3_throughput{job="ue-metrics"}[5m])))
-)
-*
-(4.23 - 1) + 1
+R = R0 - Ie - Ae
+R is the estimated MOS (Mean Opinion Score).
+R0 is the basic MOS value without degradation.
+Ie is the packet loss impairment factor.
+Ae is the delay impairment factor.
 ```
 
 
@@ -215,12 +211,6 @@ ip route add default via 10.45.0.4 dev uesimtun0
 traceroute 8.8.8.8
 ```
 
-# Add new user
-```
-kubectl port-forward svc/open5gs-webui 3000:3000
-admin
-1423
-```
 
 # stress testing
 Stress tests are performed on the UPF to see how this element behaves when working at the edge of the allocated resource limit.
@@ -231,7 +221,7 @@ memtester 100M 1 -t 30
 ```
 
 
-# [Referencia metrics-server | FAQ](https://github.com/kubernetes-sigs/metrics-server/blob/master/FAQ.md)
+# How CPU usage is calculated? [metrics-server reference | FAQ](https://github.com/kubernetes-sigs/metrics-server/blob/master/FAQ.md)
 ## How CPU usage is calculated?
 This value is derived by taking a rate over a cumulative CPU counter provided by the kernel (in both Linux and Windows kernels). Time window used to calculate CPU is exposed under window field in Metrics API. 
 
