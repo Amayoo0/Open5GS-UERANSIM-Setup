@@ -5,6 +5,7 @@ This describes a very simple configuration that uses Open5GS and UERANSIM for mo
 - Open5GS and UERANSIM implementation
 - Prometheus and Grafana connection
 - Collect real-time resource utilization & application metrics
+
 ![Grafana Dashboard](https://github.com/Amayoo0/Open5GS-UERANSIM-Setup/blob/d89230c537efaf65c7d4a62f8f6919a906b322e0/Monitoring/GrafanaDashboard/grafana-dashboard.png)
 
 # Getting Started
